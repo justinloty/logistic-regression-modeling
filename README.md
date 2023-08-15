@@ -1,2 +1,2 @@
-# logistic regression modeling
- Personal project created by Justin Lo 
+# Logistic regression modeling
+Created a logistic regression model and calculated predicted probability
