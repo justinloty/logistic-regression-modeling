@@ -1,0 +1,107 @@
+---
+title: "logistic regression modeling"
+author: "Justin Lo"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In this project, I explore logistic regression modeling using a dataset from the 2016 European Social Survey [(https://www.europeansocialsurvey.org)]
+
+The data includes the following variables:
+
+|**Variable**|**Description**|
+|---------------|-------------------------------------------------------------|
+|`country_code`|The country of the respondent|
+|`leave`|1 if the respondent would vote to leave the European Union in a referendum, 0 otherwise|
+|`gender`|Whether the respondent is male or female|
+|`age`|The age of the respondent (in years)|
+|`years_education`| The number of years of education the respondent has completed|
+|`unemployed`|1 if the respondent is unemployed, 0 otherwise|
+|`income`|1 if the respondent earns above the median income in their country, 0 otherwise|
+|`religion`|Categorical variable of the religion of the respondent|
+|`trade_union`|1 if the respondent is a member of a trade union, 0 otherwise|
+|`news_consumption`|Amount of time the respondent spends reading newspapers/online news each week (in minutes)|
+|`trust_people`|The degree to which the respondent trusts other people (0 = low trust, 10 = high trust)|
+|`trust_politicians`|The degree to which the respondent trusts politicians (0 = low trust, 10 = high trust)|
+|`past_vote`|1 if the respondent voted in the last general election in their country, 0 otherwise|
+|`immig_econ`|The respondent's view of the economic effects of immigration in their country (0 = Immigration is bad for the economy; 10 = Immigration is good for the economy)|
+|`immig_culture`|The respondent's view of the cultural effects of immigration in their country (0 = Immigration undermines the country's culture; 10 = Immigration enriches the country's culture)|
+|`country_attach`|The respondent's emotional attachment to their country (0 = Not at all emotionally attached; 10 = Very emotionally attached)|
+|`climate_change`|How worried the respondent is about climate change (1 = Not at all worried; 5 = Very worried)|
+|`imp_tradition`|How important the respondent feels it is to follow traditions and customs (1 = Very important; 6 = Not at all important)|
+|`imp_equality`|How important the respondent feels it is people are treated equally and have equal opportunities (1 = Very important; 6 = Not at all important)|
+|`eu_integration`|The respondent's views on European unification/integration (0 = "Unification has already gone too far"; 10 = "Unification should go much further")|
+|`train`|A variable indicating whether the respondent should be used in the training set (`TRUE`) or the test set (`FALSE`).|
+Table: ESS codebook
+
+Reading the dataset into r
+```{r}
+ess <- read.csv("https://raw.githubusercontent.com/lse-me314/lse-me314.github.io/master/data/ess.csv")
+```
+
+Fitting a logistic regression model with 'leave' as response and with 'age', 'gender', 'years_education' and income as predictors. 
+```{r}
+logistic_model_1<- glm(leave ~ age + gender +years_education + income, family = 'binomial', data= ess)
+summary(logistic_model_1)
+```
+Overall, the model indicates that gender, years_education, and income are statistically significant predictors of leave. However, age does not appear to have a statistically significant relationship with leave.
+
+
+To calculate the predicted probability of voting to leave the EU for respondonts with the following characteristics 
+1. A 25-year old man, with above median income, and 10 years of education
+2. A 25-year old woman, with above median income, and 15 years of education
+3. A 65-year old woman, with below median income, and 8 years of education
+4. A 65-year old man, with below median income, and 12 years of education
+
+```{r}
+df1<- data.frame(age=25, income= 1, years_education=10, gender= 'Male')
+df2<- data.frame(age=25, income= 1, years_education=15, gender= 'Female')
+df3<- data.frame(age=65, income= 0, years_education=8, gender= 'Female')
+df4<- data.frame(age=65, income= 0, years_education=12, gender= 'Male')
+pd1<-predict(logistic_model_1, df1, type = 'response')
+pd2<-predict(logistic_model_1, df2, type = 'response')
+pd3<-predict(logistic_model_1, df3, type = 'response')
+pd4<-predict(logistic_model_1, df4, type = 'response')
+pd1
+pd2
+pd3
+pd4
+```
+A 65-year old woman, with below median income, and 8 years of education has the highest probability of voting to leave the EU based on the model
+A 25-year old woman, with above median income, and 15 years of education has the lowest probability of voting to leave the EU based on the model
+
+
+Now to calculate the predicted probability of every observations in the dataset. 
+```{r}
+prediction1<- predict(logistic_model_1, type = "response")
+head(prediction1)
+```
+
+To update the model, including the country code
+```{r}
+logistic_model_2<- glm(leave ~ age + gender +years_education + income + country_code, family = 'binomial', data= ess)
+prediction2<- predict(logistic_model_2, type = "response")
+head(prediction2)
+count<- sum(prediction2>0.5)
+count
+```
+274 observations have probability greater than 0.5
+
+```{r}
+high_probability_observations <- ess[prediction2 > 0.5, ]
+high_probability_observations$country_code
+print(unique(high_probability_observations$country_code))
+```
+GB is the only country with respondents with a probability of voting to leave of greater than 0.5
+
+
+
+
+
+
